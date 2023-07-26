@@ -1,118 +1,184 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Text-to-Speech Converter</title>
+  <title>Text to Audio Converter</title>
   <style>
-    body {
+   body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin: 0;
-      padding: 0;
-      background-image: url('https://example.com/background-image.jpg'); /* Replace with your background image URL */
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #container {
-      background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
-      border-radius: 10px;
       padding: 20px;
-      max-width: 500px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      margin-top: 0;
+      background-color: antiquewhite;
     }
 
     textarea {
       width: 100%;
-      height: 200px;
+      height: 150px;
       resize: none;
-      margin-bottom: 20px;
-      padding: 10px;
-      font-size: 16px;
+      margin-bottom: 10px;
+      border: 5px solid #4CAF50;
+      border-radius: 10px;
     }
 
     button {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: #fff;
+      background-color: #4CAF50;
+      color: white;
       border: none;
-      border-radius: 5px;
+      padding: 10px 20px;
+      margin: 5px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      border-radius: 4px;
+      font-size: 16px;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    a {
+      display: none;
+      background-color: #007BFF;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    h1{
+        text-align: center;
+        background-color: #4CAF50;
+        border-radius: 10px;
+    }
+    h1:hover{
+        color: white;
+        background-color: #5cd360;
     }
   </style>
 </head>
 <body>
-    <div id="container">
-        <h1>Text-to-Speech Converter</h1>
-        <textarea id="textToRead" placeholder="Enter text here..."></textarea>
-        <label for="voices">Select Voice:</label>
-        <select id="voices">
-          <!-- Voice options will be populated dynamically using JavaScript -->
-        </select>
-        <button id="speakButton">Speak</button>
-      </div>
-    
-      <script>
-        const speakButton = document.getElementById('speakButton');
-        const textToRead = document.getElementById('textToRead');
-        const voiceSelect = document.getElementById('voices');
-        let speechSynthesisUtterance = null;
-    
-        // Check if Web Speech API is supported
-        if ('speechSynthesis' in window) {
-          // Initialize SpeechSynthesisUtterance
-          speechSynthesisUtterance = new SpeechSynthesisUtterance();
-          speechSynthesisUtterance.lang = 'en-US'; // Language (change as needed)
-    
-          // Populate voice options
-          function populateVoiceList() {
-            const voices = speechSynthesis.getVoices();
-            voiceSelect.innerHTML = '';
-            voices.forEach(voice => {
-              const option = document.createElement('option');
-              option.textContent = voice.name;
-              option.value = voice.name;
-              voiceSelect.appendChild(option);
-            });
-          }
-    
-          // Wait for voices to be loaded
-          speechSynthesis.onvoiceschanged = populateVoiceList;
-    
-          speakButton.addEventListener('click', () => {
-            if (speechSynthesis.speaking) {
-              speechSynthesis.cancel();
-            }
-    
-            const text = textToRead.value.trim();
-            if (text !== '') {
-              speechSynthesisUtterance.text = text;
-              const selectedVoice = voiceSelect.value;
-              const voices = speechSynthesis.getVoices();
-              const voice = voices.find(v => v.name === selectedVoice);
-              if (voice) {
-                speechSynthesisUtterance.voice = voice;
-              }
-              speechSynthesis.speak(speechSynthesisUtterance);
-            }
-          });
-        } else {
-          speakButton.disabled = true;
-          textToRead.value = 'Web Speech API is not supported in this browser.';
-        }
-      </script>
+    <h1>Text To Speech</h1>
+  <textarea id="inputText" placeholder="Enter your text here"></textarea><br>
+  <label for="voiceSelect">Select a voice:</label>
+  <select id="voiceSelect"></select>
+  <br>
+  <button id="convertButton">Convert to Audio</button>
+  <button id="listenButton">Listen to Audio</button>
+  <button id="pauseButton" disabled>Pause</button>
+  <button id="resumeButton" disabled>Resume</button>
+  <a id="downloadLink">Download Audio</a>
+
+  <script>
+    const apiKey = '688a743d26b54280b8f932f89a60a61b';
+    const audioFormat = 'mp3';
+    const synth = window.speechSynthesis;
+    let currentUtterance;
+
+    function enableButtons() {
+      document.getElementById('convertButton').disabled = false;
+      document.getElementById('listenButton').disabled = false;
+      document.getElementById('pauseButton').disabled = true;
+      document.getElementById('resumeButton').disabled = true;
+    }
+
+    function disableButtons() {
+      document.getElementById('convertButton').disabled = true;
+      document.getElementById('listenButton').disabled = true;
+      document.getElementById('pauseButton').disabled = false;
+      document.getElementById('resumeButton').disabled = false;
+    }
+
+    function handleSpeechStart() {
+      disableButtons();
+    }
+
+    function handleSpeechEnd() {
+      enableButtons();
+    }
+
+    function handleSpeechPause() {
+      document.getElementById('pauseButton').disabled = true;
+      document.getElementById('resumeButton').disabled = false;
+    }
+
+    function handleSpeechResume() {
+      document.getElementById('pauseButton').disabled = false;
+      document.getElementById('resumeButton').disabled = true;
+    }
+
+    function populateVoiceList() {
+      const voiceSelect = document.getElementById('voiceSelect');
+      voiceSelect.innerHTML = '';
+
+      synth.getVoices().forEach((voice) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.lang;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    populateVoiceList();
+    if (typeof synth !== 'undefined' && synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = populateVoiceList;
+    }
+
+    document.getElementById('convertButton').addEventListener('click', () => {
+      const inputText = document.getElementById('inputText').value;
+      if (!inputText.trim()) {
+        alert('Please enter some text.');
+        return;
+      }
+
+      const selectedVoice = document.getElementById('voiceSelect').value;
+      const url = `https://api.voicerss.org/?key=${apiKey}&hl=${selectedVoice}&c=${audioFormat}&src=${encodeURIComponent(inputText)}`;
+
+      fetch(url)
+        .then((response) => response.blob())
+        .then((audioBlob) => {
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const downloadLink = document.getElementById('downloadLink');
+          downloadLink.href = audioUrl;
+          downloadLink.download = 'generated_audio.mp3';
+          downloadLink.style.display = 'inline-block';
+        })
+        .catch((error) => {
+          console.error('Error converting text to audio:', error);
+        });
+    });
+
+    document.getElementById('listenButton').addEventListener('click', () => {
+      const inputText = document.getElementById('inputText').value;
+      if (!inputText.trim()) {
+        alert('Please enter some text.');
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(inputText);
+      const selectedVoice = document.getElementById('voiceSelect').value;
+      utterance.lang = selectedVoice;
+
+      synth.cancel(); // Cancel any previous speech synthesis in case it's still running
+
+      currentUtterance = utterance;
+
+      utterance.onstart = handleSpeechStart;
+      utterance.onend = handleSpeechEnd;
+      utterance.onpause = handleSpeechPause;
+      utterance.onresume = handleSpeechResume;
+
+      synth.speak(utterance);
+    });
+
+    document.getElementById('pauseButton').addEventListener('click', () => {
+      if (currentUtterance) {
+        synth.pause();
+      }
+    });
+
+    document.getElementById('resumeButton').addEventListener('click', () => {
+      if (currentUtterance) {
+        synth.resume();
+      }
+    });
+  </script>
 </body>
 </html>
